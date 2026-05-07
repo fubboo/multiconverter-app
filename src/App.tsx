@@ -210,11 +210,12 @@ interface RowProps {
   onRemove: () => void
   onAmountChange?: (v: string) => void
   onCopy: (code: string, text: string) => void
+  onEnter?: () => void
 }
 
 function DraggableRow(props: RowProps) {
   const { code, isBase, amount, computedValue, decimalMode, isDark, canRemove,
-    copied, onSelectBase, onEditCurrency, onRemove, onAmountChange, onCopy } = props
+    copied, onSelectBase, onEditCurrency, onRemove, onAmountChange, onCopy, onEnter } = props
   const controls = useDragControls()
   const [rowHover, setRowHover] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -288,6 +289,21 @@ function DraggableRow(props: RowProps) {
           </svg>
         </button>
 
+        {/* Remove button — inline, gray, next to currency selector */}
+        {rowHover && canRemove && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove() }}
+            style={{
+              width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
+              color: 'var(--color-text-faint)',
+              fontSize: 13, fontWeight: 700,
+              marginLeft: -4,
+            }}
+          >×</button>
+        )}
+
         <div style={{ flex: 1 }} />
 
         {/* Amount */}
@@ -301,6 +317,9 @@ function DraggableRow(props: RowProps) {
               onChange={e => {
                 const v = e.target.value
                 if (v === '' || /^[\d.+\-×÷]*$/.test(v)) onAmountChange?.(v)
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); onEnter?.() }
               }}
               onClick={e => e.stopPropagation()}
               style={{
@@ -345,20 +364,6 @@ function DraggableRow(props: RowProps) {
           )}
         </div>
 
-        {rowHover && canRemove && (
-          <motion.button
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            onClick={(e) => { e.stopPropagation(); onRemove() }}
-            style={{
-              position: 'absolute', top: 6, right: 4,
-              width: 20, height: 20, borderRadius: '50%',
-              backgroundColor: 'var(--color-danger)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 700, color: 'white',
-            }}
-          >✕</motion.button>
-        )}
       </div>
     </Reorder.Item>
   )
@@ -476,16 +481,23 @@ export default function App() {
   const appendOp = (op: string) => {
     setAmount(prev => {
       const lastChar = prev[prev.length - 1]
-      if (['+', '−', '×', '÷'].includes(lastChar)) {
-        return prev.slice(0, -1) + op
-      }
+      if (['+', '−', '×', '÷'].includes(lastChar)) return prev.slice(0, -1) + op
       return prev + op
     })
-    // Focus the base input after appending
-    setTimeout(() => {
-      const inputs = document.querySelectorAll('input[type="text"]')
-      if (inputs.length > 0) (inputs[0] as HTMLInputElement).focus()
-    }, 10)
+    // After React re-renders, focus input and place cursor at end
+    requestAnimationFrame(() => {
+      const inputs = document.querySelectorAll<HTMLInputElement>('input[type="text"]')
+      if (inputs.length > 0) {
+        const input = inputs[0]
+        input.focus()
+        input.setSelectionRange(input.value.length, input.value.length)
+      }
+    })
+  }
+
+  const handleEnter = () => {
+    const result = safeEvaluate(amount)
+    if (result !== null) setAmount(strip(result.toString()))
   }
 
   const statusDot = error ? '#ff453a' : loading ? '#f0a500' : '#34c759'
@@ -660,7 +672,7 @@ export default function App() {
         </section>
 
         {/* ── Converter Section ── */}
-        <div ref={converterRef} className="snap-start" style={{ minHeight: '100vh', padding: '52px 24px 0' }}>
+        <div ref={converterRef} className="snap-start" style={{ minHeight: '100vh', padding: '88px 24px 0', display: 'flex', flexDirection: 'column' }}>
 
           {/* Converter card */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -762,6 +774,7 @@ export default function App() {
                     onRemove={() => handleRemove(idx)}
                     onAmountChange={setAmount}
                     onCopy={handleCopy}
+                    onEnter={handleEnter}
                   />
                 ))}
               </Reorder.Group>
@@ -782,7 +795,7 @@ export default function App() {
           </div>
 
           {/* Stats row */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 56, marginTop: 64, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 88, marginTop: 100, flexWrap: 'wrap' }}>
             {[
               { to: 150, suffix: '+', label: 'Currencies' },
               { to: 100, suffix: '%', label: 'Free forever' },
@@ -797,8 +810,11 @@ export default function App() {
             ))}
           </div>
 
+          {/* Push footer to bottom */}
+          <div style={{ flex: 1 }} />
+
           {/* Footer */}
-          <div style={{ textAlign: 'center', marginTop: 64, paddingBottom: 56 }}>
+          <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 40, borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, paddingTop: 28 }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 16, flexWrap: 'wrap' }}>
               {[
                 { label: 'Privacy Policy', href: '#privacy' },
