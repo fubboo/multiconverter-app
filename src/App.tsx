@@ -313,6 +313,7 @@ function DraggableRow(props: RowProps) {
               ref={inputRef}
               type="text"
               inputMode="decimal"
+              maxLength={40}
               value={amount}
               onChange={e => {
                 const v = e.target.value

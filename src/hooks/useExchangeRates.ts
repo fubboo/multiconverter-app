@@ -50,7 +50,13 @@ export function useExchangeRates(base: string) {
       const raw = localStorage.getItem(cacheKey)
       if (raw) {
         const parsed = JSON.parse(raw) as CachedRates
-        if (parsed && parsed.rates) {
+        if (
+          parsed &&
+          typeof parsed.fetchedAt === 'number' &&
+          typeof parsed.date === 'string' &&
+          parsed.rates && typeof parsed.rates === 'object' &&
+          Object.values(parsed.rates).every(v => typeof v === 'number')
+        ) {
           setRates({ ...parsed.rates, [base]: 1 })
           setDate(parsed.date)
           usedCache = true
