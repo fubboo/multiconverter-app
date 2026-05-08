@@ -896,7 +896,7 @@ export default function App() {
             {/* Social icons */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
               {/* X / Twitter */}
-              <a href="https://x.com/multiconverter" target="_blank" rel="noopener noreferrer"
+              <a href="https://x.com/multiconvert" target="_blank" rel="noopener noreferrer"
                 aria-label="X (Twitter)"
                 style={{ width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: 'var(--color-text-dim)', textDecoration: 'none', transition: 'background 0.15s, color 0.15s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-text)' }}
@@ -907,7 +907,7 @@ export default function App() {
                 </svg>
               </a>
               {/* Instagram */}
-              <a href="https://instagram.com/multiconverter.app" target="_blank" rel="noopener noreferrer"
+              <a href="https://www.instagram.com/multiconverter.app/" target="_blank" rel="noopener noreferrer"
                 aria-label="Instagram"
                 style={{ width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: 'var(--color-text-dim)', textDecoration: 'none', transition: 'background 0.15s, color 0.15s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-text)' }}
