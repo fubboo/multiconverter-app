@@ -169,7 +169,7 @@ function LegalModal({ type, isDark, onClose }: { type: 'privacy' | 'terms'; isDa
       { heading: 'Flag Images', body: 'Country flag images are loaded from flagcdn.com, a public CDN. Your IP address may be visible to this service as part of loading the images.' },
       { heading: 'Children\'s Privacy', body: 'The App does not knowingly collect data from children under 13. Since we collect no personal data at all, the App is safe for all ages.' },
       { heading: 'Changes to This Policy', body: 'If we make material changes to this policy, we will update the "Last updated" date above. Continued use of the App constitutes acceptance of any changes.' },
-      { heading: 'Contact', body: 'For any privacy-related questions, contact us at: fubboo@proton.me' },
+      { heading: 'Contact', body: 'For any privacy-related questions, contact us at: hello@multiconverter.app' },
     ],
   } : {
     title: 'Terms of Use',
@@ -181,7 +181,7 @@ function LegalModal({ type, isDark, onClose }: { type: 'privacy' | 'terms'; isDa
       { heading: 'No Financial Advice', body: 'The App is a currency conversion tool only. Nothing in the App constitutes financial, investment, or legal advice.' },
       { heading: 'Limitation of Liability', body: 'The App is provided "as is" without warranties of any kind. Fubboo shall not be liable for any losses or damages arising from the use of the App or reliance on its exchange rate data.' },
       { heading: 'Availability', body: 'We reserve the right to modify, suspend, or discontinue the App at any time without notice.' },
-      { heading: 'Contact', body: 'For any questions about these Terms, contact us at: fubboo@proton.me' },
+      { heading: 'Contact', body: 'For any questions about these Terms, contact us at: hello@multiconverter.app' },
     ],
   }
 
@@ -625,12 +625,7 @@ export default function App() {
         borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)'}`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #ff9500, #ff5f00)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-              <path d="M7 9h10M7 15h10" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
-              <path d="M14 6l3 3-3 3M10 18l-3-3 3-3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          <img src="/logo-192.png" alt="Multi Converter" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover' }} />
           <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.4px', color: 'var(--color-text)' }}>
             multiconverter
           </span>
@@ -930,7 +925,7 @@ export default function App() {
               {([
                 { label: 'Privacy Policy', action: () => setLegalModal('privacy') },
                 { label: 'Terms of Use', action: () => setLegalModal('terms') },
-                { label: 'Contact', action: () => window.location.href = 'mailto:fubboo@proton.me' },
+                { label: 'Contact', action: () => window.location.href = 'mailto:hello@multiconverter.app' },
               ] as { label: string; action: () => void }[]).map(({ label, action }) => (
                 <button key={label} onClick={action}
                   style={{ fontSize: 12, color: 'var(--color-text-dim)', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.15s', fontFamily: 'inherit' }}
