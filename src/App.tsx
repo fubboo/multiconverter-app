@@ -149,6 +149,87 @@ function AnimatedHeadline() {
   )
 }
 
+// ─── LegalModal ──────────────────────────────────────────────────────────────
+
+function LegalModal({ type, isDark, onClose }: { type: 'privacy' | 'terms'; isDark: boolean; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const content = type === 'privacy' ? {
+    title: 'Privacy Policy',
+    updated: 'Last updated: May 8, 2026',
+    sections: [
+      { heading: 'Overview', body: 'Multi Converter ("the App") is operated by Fubboo. We are committed to protecting your privacy. This policy explains what data the App does and does not collect.' },
+      { heading: 'Data We Do Not Collect', body: 'We do not collect any personal information. The App does not require you to create an account, log in, or provide any personal details. We do not use analytics, tracking pixels, advertising SDKs, or any third-party data collection tools.' },
+      { heading: 'Data Stored Locally on Your Device', body: 'The App stores the following data locally on your device using browser localStorage:\n• Your selected currencies and base currency\n• Your decimal precision preference\n• Your theme preference (dark/light)\n• Cached exchange rates (updated daily)\n\nThis data never leaves your device and is not transmitted to us or any third party.' },
+      { heading: 'Exchange Rate API', body: 'To fetch live exchange rates, the App connects to a public, free API (cdn.jsdelivr.net / currency-api.pages.dev). This connection may expose your IP address to the CDN provider as part of a normal HTTP request. We have no access to this data.' },
+      { heading: 'Flag Images', body: 'Country flag images are loaded from flagcdn.com, a public CDN. Your IP address may be visible to this service as part of loading the images.' },
+      { heading: 'Children\'s Privacy', body: 'The App does not knowingly collect data from children under 13. Since we collect no personal data at all, the App is safe for all ages.' },
+      { heading: 'Changes to This Policy', body: 'If we make material changes to this policy, we will update the "Last updated" date above. Continued use of the App constitutes acceptance of any changes.' },
+      { heading: 'Contact', body: 'For any privacy-related questions, contact us at: fubboo@proton.me' },
+    ],
+  } : {
+    title: 'Terms of Use',
+    updated: 'Last updated: May 8, 2026',
+    sections: [
+      { heading: 'Acceptance', body: 'By using Multi Converter ("the App"), you agree to these Terms. If you do not agree, please stop using the App.' },
+      { heading: 'Use of the App', body: 'The App is provided free of charge for personal, non-commercial use. You may not reverse-engineer, copy, distribute, or create derivative works from the App without explicit permission from Fubboo.' },
+      { heading: 'Exchange Rates Disclaimer', body: 'Exchange rates displayed in the App are sourced from a free public dataset and are updated approximately once per day. Rates are provided for informational purposes only and should not be used as a basis for financial transactions. Always verify rates with your bank or financial institution before making decisions.' },
+      { heading: 'No Financial Advice', body: 'The App is a currency conversion tool only. Nothing in the App constitutes financial, investment, or legal advice.' },
+      { heading: 'Limitation of Liability', body: 'The App is provided "as is" without warranties of any kind. Fubboo shall not be liable for any losses or damages arising from the use of the App or reliance on its exchange rate data.' },
+      { heading: 'Availability', body: 'We reserve the right to modify, suspend, or discontinue the App at any time without notice.' },
+      { heading: 'Contact', body: 'For any questions about these Terms, contact us at: fubboo@proton.me' },
+    ],
+  }
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0 0 0 0' }}
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }} />
+      {/* Sheet */}
+      <div
+        className="sheet-enter"
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'relative', zIndex: 1, width: '100%', maxWidth: 640,
+          maxHeight: '88vh', overflowY: 'auto',
+          backgroundColor: isDark ? '#111116' : '#ffffff',
+          borderRadius: '20px 20px 0 0',
+          padding: '0 0 40px',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.4)',
+        }}
+      >
+        {/* Handle + header */}
+        <div style={{ position: 'sticky', top: 0, backgroundColor: isDark ? '#111116' : '#ffffff', padding: '14px 24px 12px', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, zIndex: 1 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)', margin: '0 auto 14px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>{content.title}</h2>
+              <p style={{ fontSize: 11, color: 'var(--color-text-faint)', margin: '3px 0 0' }}>{content.updated}</p>
+            </div>
+            <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-dim)', fontFamily: 'inherit', fontSize: 16 }}>✕</button>
+          </div>
+        </div>
+        {/* Content */}
+        <div style={{ padding: '20px 24px 0' }}>
+          {content.sections.map(({ heading, body }) => (
+            <div key={heading} style={{ marginBottom: 20 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-accent)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{heading}</h3>
+              <p style={{ fontSize: 14, color: 'var(--color-text-dim)', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-line' }}>{body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── SocialProof ─────────────────────────────────────────────────────────────
 
 function SocialProof({ onClick }: { onClick?: () => void }) {
@@ -395,6 +476,7 @@ export default function App() {
   const [amount, setAmount] = useState('1')
   const [picker, setPicker] = useState<PickerMode>({ kind: 'closed' })
   const [copied, setCopied] = useState<string | null>(null)
+  const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null)
   const converterRef = useRef<HTMLDivElement>(null)
   const badgesRef = useRef<HTMLDivElement>(null)
   const isDark = theme === 'dark'
@@ -816,20 +898,47 @@ export default function App() {
 
           {/* Footer */}
           <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 40, borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, paddingTop: 28 }}>
+            {/* Social icons */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
+              {/* X / Twitter */}
+              <a href="https://x.com/multiconverter" target="_blank" rel="noopener noreferrer"
+                aria-label="X (Twitter)"
+                style={{ width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: 'var(--color-text-dim)', textDecoration: 'none', transition: 'background 0.15s, color 0.15s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-text)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-text-dim)' }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </a>
+              {/* Instagram */}
+              <a href="https://instagram.com/multiconverter.app" target="_blank" rel="noopener noreferrer"
+                aria-label="Instagram"
+                style={{ width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: 'var(--color-text-dim)', textDecoration: 'none', transition: 'background 0.15s, color 0.15s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-text)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-text-dim)' }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                  <circle cx="12" cy="12" r="4"/>
+                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                </svg>
+              </a>
+            </div>
+            {/* Links */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 16, flexWrap: 'wrap' }}>
-              {[
-                { label: 'Privacy Policy', href: '#privacy' },
-                { label: 'Terms of Use', href: '#terms' },
-                { label: 'About', href: '#about' },
-                { label: 'Contact', href: 'mailto:fubboo@proton.me' },
-              ].map(({ label, href }) => (
-                <a key={label} href={href}
-                  style={{ fontSize: 12, color: 'var(--color-text-dim)', textDecoration: 'none', transition: 'color 0.15s' }}
+              {([
+                { label: 'Privacy Policy', action: () => setLegalModal('privacy') },
+                { label: 'Terms of Use', action: () => setLegalModal('terms') },
+                { label: 'Contact', action: () => window.location.href = 'mailto:fubboo@proton.me' },
+              ] as { label: string; action: () => void }[]).map(({ label, action }) => (
+                <button key={label} onClick={action}
+                  style={{ fontSize: 12, color: 'var(--color-text-dim)', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.15s', fontFamily: 'inherit' }}
                   onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-accent)')}
                   onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-dim)')}
                 >
                   {label}
-                </a>
+                </button>
               ))}
             </div>
             <p style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>
@@ -851,6 +960,10 @@ export default function App() {
           onPick={handlePick}
           onClose={() => setPicker({ kind: 'closed' })}
         />
+      )}
+
+      {legalModal && (
+        <LegalModal type={legalModal} isDark={isDark} onClose={() => setLegalModal(null)} />
       )}
     </div>
   )
