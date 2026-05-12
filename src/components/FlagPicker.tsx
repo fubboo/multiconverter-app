@@ -7,19 +7,21 @@ interface Props {
   title: string
   onPick: (code: string) => void
   onClose: () => void
+  isDark: boolean
 }
 
 function FlagImg({ countryCode, fallback }: { countryCode?: string; fallback: string }) {
   const [failed, setFailed] = useState(false)
-  if (!countryCode || failed) return <span className="text-[18px]">{fallback}</span>
+  if (!countryCode || failed) return <span style={{ fontSize: 20, lineHeight: 1 }}>{fallback}</span>
   return (
     <img src={`https://flagcdn.com/w40/${countryCode}.png`} srcSet={`https://flagcdn.com/w80/${countryCode}.png 2x`}
-      alt="" width={26} height={20} loading="lazy"
-      className="rounded-[3px] object-cover" onError={() => setFailed(true)} />
+      alt="" width={28} height={21} loading="lazy"
+      style={{ borderRadius: 4, objectFit: 'cover', display: 'block', flexShrink: 0 }}
+      onError={() => setFailed(true)} />
   )
 }
 
-export function FlagPicker({ excludeCodes, highlightCode, title, onPick, onClose }: Props) {
+export function FlagPicker({ excludeCodes, highlightCode, title, onPick, onClose, isDark }: Props) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -36,45 +38,92 @@ export function FlagPicker({ excludeCodes, highlightCode, title, onPick, onClose
     .filter(c => !q || c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q))
     .sort((a, b) => a.code.localeCompare(b.code))
 
+  const bg = isDark ? '#16161e' : '#ffffff'
+  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+  const inputBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'
+  const hoverBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+  const closeBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="sheet-enter w-full max-w-md rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
-        style={{ backgroundColor: '#111118', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '80vh' }}
+        className="sheet-enter"
+        style={{
+          width: '100%', maxWidth: 480,
+          backgroundColor: bg,
+          border: `1px solid ${border}`,
+          borderRadius: '20px 20px 0 0',
+          display: 'flex', flexDirection: 'column',
+          maxHeight: '82vh', overflow: 'hidden',
+        }}
       >
-        <div className="px-4 pt-4 pb-3 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>{title}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--color-text)' }}>✕</button>
+        {/* Pill handle */}
+        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)', margin: '12px auto 0' }} />
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 12px', borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>{title}</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{ width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: closeBg, color: 'var(--color-text-dim)', flexShrink: 0 }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
-        <div className="px-3 py-2.5 shrink-0">
+
+        {/* Search */}
+        <div style={{ padding: '10px 16px 8px', flexShrink: 0 }}>
           <input
             ref={inputRef} value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search currency..."
-            className="w-full px-3 py-2.5 rounded-xl text-[15px]"
-            style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'var(--color-text)', border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              backgroundColor: inputBg,
+              color: 'var(--color-text)',
+              border: `1px solid ${border}`,
+              borderRadius: 12, padding: '10px 14px',
+              fontSize: 15, outline: 'none',
+            }}
           />
         </div>
-        <div className="overflow-y-auto flex flex-col px-3 pb-4 gap-1">
+
+        {/* List */}
+        <div style={{ overflowY: 'auto', padding: '4px 10px 16px', flex: 1 }}>
           {filtered.map(c => (
             <button
               key={c.code}
               onClick={() => onPick(c.code)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-white/[0.06] active:scale-[0.99]"
-              style={c.code === highlightCode ? { backgroundColor: 'rgba(255,149,0,0.1)', outline: '1px solid rgba(255,149,0,0.4)', outlineOffset: '-1px' } : {}}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                padding: '9px 12px', borderRadius: 12, textAlign: 'left', border: 'none', cursor: 'pointer',
+                backgroundColor: c.code === highlightCode ? 'rgba(255,149,0,0.10)' : 'transparent',
+                outline: c.code === highlightCode ? '1px solid rgba(255,149,0,0.4)' : 'none',
+                outlineOffset: -1,
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => { if (c.code !== highlightCode) (e.currentTarget as HTMLButtonElement).style.backgroundColor = hoverBg }}
+              onMouseLeave={e => { if (c.code !== highlightCode) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}
             >
-              <FlagImg countryCode={c.countryCode} fallback={c.flag} />
-              <span className="font-semibold text-[14px]" style={{ color: 'var(--color-text)' }}>{c.code}</span>
-              <span className="text-[13px] truncate" style={{ color: 'var(--color-text-dim)' }}>{c.name}</span>
+              {/* Flag — fixed width */}
+              <div style={{ width: 32, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                <FlagImg countryCode={c.countryCode} fallback={c.flag} />
+              </div>
+              {/* Code — fixed width */}
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', width: 46, flexShrink: 0 }}>{c.code}</span>
+              {/* Name */}
+              <span style={{ fontSize: 13, color: 'var(--color-text-dim)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="text-center py-8" style={{ color: 'var(--color-text-faint)' }}>No results</p>
+            <p style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-faint)' }}>No results</p>
           )}
         </div>
       </div>

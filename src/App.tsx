@@ -690,7 +690,7 @@ export default function App() {
             transition={{ delay: 0.6, duration: 0.5 }}
             style={{ fontSize: 19, color: 'var(--color-text-dim)', marginBottom: 36, maxWidth: 440, lineHeight: 1.65 }}
           >
-            Live exchange rates updated daily.<br />Works offline. Always free.
+            Convert between multiple currencies at once — see all your rates update instantly as you type.<br />Live exchange rates updated daily. Works offline. Always free.
           </motion.p>
 
           <SocialProof onClick={() => badgesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
@@ -954,6 +954,7 @@ export default function App() {
           title={picker.kind === 'add' ? 'Add currency' : 'Change currency'}
           onPick={handlePick}
           onClose={() => setPicker({ kind: 'closed' })}
+          isDark={isDark}
         />
       )}
 
