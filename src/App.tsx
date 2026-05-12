@@ -421,15 +421,15 @@ function DraggableRow(props: RowProps) {
               }}>
                 <SplitAmount text={displayText} />
               </span>
-              {/* Copy button */}
+              {/* Copy button — always visible */}
               <button
                 onClick={(e) => { e.stopPropagation(); onCopy(code, displayText) }}
                 style={{
                   width: 26, height: 26, borderRadius: 7, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
-                  opacity: rowHover || copied === code ? 1 : 0,
-                  transition: 'opacity 0.15s',
+                  opacity: copied === code ? 1 : 0.45,
+                  transition: 'opacity 0.15s, color 0.15s',
                   color: copied === code ? '#34c759' : 'var(--color-text-dim)',
                 }}
               >
