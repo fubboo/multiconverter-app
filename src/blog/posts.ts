@@ -229,6 +229,65 @@ export const POSTS: Post[] = [
       { t: 'cta', text: 'Convert USD to PHP now' },
     ],
   },
+  {
+    slug: 'money-converter-guide',
+    title: 'Money Converter: How to Convert Any Currency in the World',
+    description:
+      'Looking for a universal money converter? Learn how to convert money between any two currencies instantly, for free, with live exchange rates — no matter which currencies you use.',
+    excerpt:
+      'A universal money converter should handle any currency pair, not just the popular ones. Here is how to convert money between any two currencies correctly.',
+    date: '2026-07-17',
+    readMins: 3,
+    tag: 'Guide',
+    body: [
+      { t: 'p', text: 'Most "money converter" tools only handle a handful of major currencies well. But money moves between all sorts of currency pairs — Thai baht to Mexican pesos, Nigerian naira to Japanese yen, Turkish lira to South African rand. A true universal money converter should handle any pair instantly, with the same accuracy as USD/EUR.' },
+      { t: 'h2', text: 'What makes a converter "universal"' },
+      { t: 'ul', items: [
+        'Support for 100+ currencies, not just the 10 most popular ones.',
+        'Direct conversion between any two currencies — not just to-and-from USD.',
+        'Live, daily-updated mid-market rates for every pair.',
+        'No region lock, no missing minor currencies.',
+      ] },
+      { t: 'rate', base: 'GBP', quote: 'JPY' },
+      { t: 'h2', text: 'How cross-currency conversion actually works' },
+      { t: 'p', text: 'Behind the scenes, most rates are derived through a common reference currency (usually USD). To convert GBP to JPY, a converter takes the GBP→USD rate and the USD→JPY rate and combines them — you never see this step, you just see GBP→JPY directly. Multi Converter does this automatically for every currency in its list, so any pair you pick just works.' },
+      { t: 'h2', text: 'How to convert money between any two currencies' },
+      { t: 'ul', items: [
+        'Pick your starting currency and the currency you want.',
+        'Type the amount — the converted value updates instantly, whatever the pair.',
+        'Check the mid-market rate as your fair-value benchmark before paying or transferring.',
+      ] },
+      { t: 'cta', text: 'Convert any currency in the world, free' },
+    ],
+  },
+  {
+    slug: 'what-affects-exchange-rate',
+    title: 'What Affects the Exchange Rate? 5 Factors That Move Currency Prices',
+    description:
+      'Why do exchange rates and conversion rates change every day? Learn the 5 main factors that move currency prices, from interest rates to inflation.',
+    excerpt:
+      'Exchange rates never sit still. Here are the 5 real factors that move the conversion rate between any two currencies, explained simply.',
+    date: '2026-07-16',
+    readMins: 4,
+    tag: 'Explained',
+    body: [
+      { t: 'p', text: 'Open a currency converter on two different days and the conversion rate is almost never exactly the same. Exchange rates move constantly — here are the five biggest reasons why, explained without the jargon.' },
+      { t: 'rate', base: 'USD', quote: 'JPY' },
+      { t: 'h2', text: '1. Interest rates' },
+      { t: 'p', text: 'When a country\'s central bank raises interest rates, money tends to flow toward that currency chasing better returns, pushing its value up. Rate decisions from the US Federal Reserve, the ECB, or the Bank of England are some of the biggest single movers of exchange rates.' },
+      { t: 'h2', text: '2. Inflation' },
+      { t: 'p', text: 'Higher inflation erodes a currency\'s purchasing power, which usually weakens it against currencies with more stable prices. Persistent inflation differences between two countries are a long-term driver of their exchange rate.' },
+      { t: 'h2', text: '3. Economic data and growth' },
+      { t: 'p', text: 'Strong jobs numbers, GDP growth, or trade data tend to support a currency, while weak data drags it down — markets are constantly repricing currencies based on the latest economic picture.' },
+      { t: 'h2', text: '4. Political stability and risk sentiment' },
+      { t: 'p', text: 'Currencies from politically stable countries are generally seen as safer to hold. Elections, policy shifts, or geopolitical tension can cause rapid swings as investors move money toward or away from perceived risk.' },
+      { t: 'h2', text: '5. Supply, demand, and trade flows' },
+      { t: 'p', text: 'A country that exports far more than it imports tends to see steady demand for its currency (buyers need it to pay for goods), which can support its value over time — and vice versa for import-heavy economies.' },
+      { t: 'h2', text: 'Why this matters for you' },
+      { t: 'p', text: 'You don\'t need to track all five factors — but knowing rates genuinely move for real reasons (not randomly) explains why the conversion rate you see today may differ tomorrow, and why checking a live rate before converting or sending money always beats using an old number from memory.' },
+      { t: 'cta', text: 'Check today\'s live conversion rate' },
+    ],
+  },
 ]
 
 export function getPost(slug: string): Post | undefined {
@@ -245,6 +304,8 @@ export const ACCENTS: Record<string, { a: string; b: string }> = {
   'best-exchange-rate-travel': { a: '#00c2b8', b: '#ff7800' },
   'gbp-to-usd': { a: '#4a9eff', b: '#ff4d8d' },
   'usd-to-php': { a: '#ffd60a', b: '#34c759' },
+  'money-converter-guide': { a: '#34c759', b: '#4a9eff' },
+  'what-affects-exchange-rate': { a: '#af52de', b: '#ff9500' },
 }
 
 export const getAccent = (slug: string) => ACCENTS[slug] ?? { a: '#7846ff', b: '#ff9500' }
