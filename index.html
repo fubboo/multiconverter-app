@@ -3,25 +3,135 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://flagcdn.com; connect-src 'self' https://cdn.jsdelivr.net https://latest.currency-api.pages.dev; font-src 'self';" />
-    <meta name="description" content="Multi Converter — The only currency converter you need. 150+ currencies, live rates, built-in calculator. Free forever." />
-    <meta property="og:title" content="Multi Converter — Currency Converter" />
-    <meta property="og:description" content="150+ currencies, live rates, built-in calculator. Free forever." />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://flagcdn.com; connect-src 'self' https://cdn.jsdelivr.net https://latest.currency-api.pages.dev https://api.frankfurter.app https://cloudflareinsights.com; font-src 'self';" />
+
+    <!-- Google Search Console verification -->
+    <meta name="google-site-verification" content="JP-4dHo9kg_U5-XgoH9A1Zxb1eAyBXR2xzP-9DMmK6o" />
+
+    <title>Free Currency Converter — 100+ Currencies, Live Rates & Calculator | Multi Converter</title>
+    <meta name="description" content="Multi Converter is a free currency converter with 100+ currencies, live exchange rates updated daily, and a built-in calculator. Convert multiple currencies at once. No ads, no signup, no tracking." />
+    <meta name="theme-color" content="#0a0a0a" />
+    <link rel="canonical" href="https://www.multiconverter.app/" />
+
+    <!-- PWA / installable -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Multi Converter" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Multi Converter" />
+    <meta property="og:title" content="Multi Converter — Free Currency Converter with Live Rates" />
+    <meta property="og:description" content="Convert 100+ currencies at once with live daily rates and a built-in calculator. Free, no signup, no tracking." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://multiconverter.app/logo-512.png" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Multi Converter — Currency Converter" />
-    <meta name="twitter:description" content="150+ currencies, live rates. Free forever." />
-    <meta name="twitter:image" content="https://multiconverter.app/logo-512.png" />
-    <title>Multi Converter — Currency Converter</title>
+    <meta property="og:url" content="https://www.multiconverter.app/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://www.multiconverter.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Multi Converter — the only currency converter you need" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Multi Converter — Free Currency Converter" />
+    <meta name="twitter:description" content="100+ currencies, live daily rates, built-in calculator. Free, no signup, no tracking." />
+    <meta name="twitter:image" content="https://www.multiconverter.app/og-image.png" />
+
+    <!-- Icons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png" />
-    <link rel="canonical" href="https://multiconverter.app" />
+
+    <!-- Structured data: WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Multi Converter",
+      "url": "https://www.multiconverter.app/",
+      "description": "Free currency converter with 100+ currencies, live daily exchange rates, and a built-in calculator. Convert multiple currencies at once.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "browserRequirements": "Requires JavaScript.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "Convert 100+ world currencies",
+        "Live exchange rates updated daily",
+        "Convert multiple currencies at the same time",
+        "Built-in calculator (+ − × ÷ and %)",
+        "Works offline with cached rates",
+        "No ads, no signup, no tracking"
+      ],
+      "publisher": { "@type": "Organization", "name": "fubboo", "url": "https://www.multiconverter.app/" }
+    }
+    </script>
+
+    <!-- Structured data: Android app -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Multi Converter",
+      "operatingSystem": "ANDROID",
+      "applicationCategory": "FinanceApplication",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "installUrl": "https://play.google.com/store/apps/details?id=multiconverter.app",
+      "url": "https://play.google.com/store/apps/details?id=multiconverter.app",
+      "description": "Free currency converter app for Android: convert 100+ currencies at once with live daily rates, a built-in calculator, offline mode and a home-screen widget. No ads, no tracking.",
+      "publisher": { "@type": "Organization", "name": "fubboo", "url": "https://www.multiconverter.app/" }
+    }
+    </script>
+
+    <!-- Structured data: FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Is Multi Converter free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Multi Converter is completely free with no ads, no subscriptions, and no signup required." } },
+        { "@type": "Question", "name": "How many currencies can I convert?", "acceptedAnswer": { "@type": "Answer", "text": "Multi Converter supports 100+ world currencies — including USD, EUR, GBP, JPY, TRY, AZN and more — with live mid-market exchange rates updated daily." } },
+        { "@type": "Question", "name": "How often are exchange rates updated?", "acceptedAnswer": { "@type": "Answer", "text": "Exchange rates are refreshed daily from a public exchange-rate dataset." } },
+        { "@type": "Question", "name": "Can I convert multiple currencies at once?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Multi Converter shows all of your selected currencies updating together as you type — not just one pair at a time." } },
+        { "@type": "Question", "name": "Does it work offline?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The latest rates are cached on your device, so you can keep converting even without an internet connection." } },
+        { "@type": "Question", "name": "Do you collect my data?", "acceptedAnswer": { "@type": "Answer", "text": "No. Multi Converter collects no personal data, uses no tracking or analytics, and requires no account." } },
+        { "@type": "Question", "name": "Is there a built-in calculator?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can add, subtract, multiply, divide, and apply percentages directly inside the converter." } }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Crawlable fallback for search engines / no-JS clients -->
+    <noscript>
+      <main style="max-width:720px;margin:0 auto;padding:40px 20px;font-family:sans-serif;color:#111;">
+        <h1>Multi Converter — the only currency converter you need</h1>
+        <p>Multi Converter is a free currency converter with 100+ currencies, live exchange rates updated daily, and a built-in calculator. Convert between multiple currencies at the same time and see every rate update instantly as you type.</p>
+        <h2>Features</h2>
+        <ul>
+          <li>Convert 100+ world currencies</li>
+          <li>Live exchange rates, updated daily</li>
+          <li>Convert multiple currencies at once</li>
+          <li>Built-in calculator with +, −, ×, ÷ and %</li>
+          <li>Works offline with cached rates</li>
+          <li>No ads, no signup, no tracking — free forever</li>
+        </ul>
+        <h2>Frequently asked questions</h2>
+        <h3>Is Multi Converter free?</h3>
+        <p>Yes. Multi Converter is completely free with no ads, no subscriptions, and no signup required.</p>
+        <h3>How many currencies can I convert?</h3>
+        <p>Multi Converter supports 100+ world currencies — including USD, EUR, GBP, JPY, TRY, AZN and more — with live mid-market exchange rates updated daily.</p>
+        <h3>Can I convert multiple currencies at once?</h3>
+        <p>Yes. Multi Converter shows all of your selected currencies updating together as you type — not just one pair at a time.</p>
+        <h3>Does it work offline?</h3>
+        <p>Yes. The latest rates are cached on your device, so you can keep converting without an internet connection.</p>
+        <h3>Do you collect my data?</h3>
+        <p>No. Multi Converter collects no personal data, uses no tracking, and requires no account.</p>
+      </main>
+    </noscript>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

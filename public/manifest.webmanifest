@@ -1,0 +1,17 @@
+{
+  "name": "Multi Converter — Currency Converter",
+  "short_name": "Multi Converter",
+  "description": "Free currency converter with 100+ currencies, live daily rates, and a built-in calculator.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "categories": ["finance", "utilities", "productivity"],
+  "icons": [
+    { "src": "/logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

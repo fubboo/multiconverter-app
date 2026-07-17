@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { CURRENCIES, type Currency } from '../data/currencies'
+import { useUI } from '../i18n/LangContext'
 
 interface Props {
   excludeCodes: string[]
@@ -22,6 +23,7 @@ function FlagImg({ countryCode, fallback }: { countryCode?: string; fallback: st
 }
 
 export function FlagPicker({ excludeCodes, highlightCode, title, onPick, onClose, isDark }: Props) {
+  const ui = useUI()
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -46,31 +48,28 @@ export function FlagPicker({ excludeCodes, highlightCode, title, onPick, onClose
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', padding: '16px' }}
       onClick={onClose}
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="sheet-enter"
         style={{
           width: '100%', maxWidth: 480,
           backgroundColor: bg,
           border: `1px solid ${border}`,
-          borderRadius: '20px 20px 0 0',
+          borderRadius: 20,
           display: 'flex', flexDirection: 'column',
-          maxHeight: '82vh', overflow: 'hidden',
+          minHeight: 380, maxHeight: 'min(680px, calc(100vh - 32px))', overflow: 'hidden',
         }}
       >
-        {/* Pill handle */}
-        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)', margin: '12px auto 0' }} />
 
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 12px', borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>{title}</h2>
+        {/* Header — title centered, X absolute */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 52px', borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text)', margin: 0, textAlign: 'center' }}>{title}</h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: closeBg, color: 'var(--color-text-dim)', flexShrink: 0 }}
+            style={{ position: 'absolute', right: 16, width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: closeBg, color: 'var(--color-text-dim)' }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -83,7 +82,7 @@ export function FlagPicker({ excludeCodes, highlightCode, title, onPick, onClose
           <input
             ref={inputRef} value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search currency..."
+            placeholder={ui.searchCurrency}
             style={{
               width: '100%', boxSizing: 'border-box',
               backgroundColor: inputBg,
@@ -123,7 +122,7 @@ export function FlagPicker({ excludeCodes, highlightCode, title, onPick, onClose
             </button>
           ))}
           {filtered.length === 0 && (
-            <p style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-faint)' }}>No results</p>
+            <p style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-faint)' }}>{ui.noResults}</p>
           )}
         </div>
       </div>

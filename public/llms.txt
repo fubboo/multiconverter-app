@@ -1,0 +1,16 @@
+# Multi Converter
+
+> Multi Converter is a free, privacy-first currency converter web app and Android app. It converts 100+ world currencies at once with live daily exchange rates and a built-in calculator — no ads, no signup, no tracking.
+
+Multi Converter is built and maintained by fubboo. The web app is available in English, Spanish, French, German, and Portuguese, each at its own localized URL. An Android app with the same functionality plus a home-screen widget is available on Google Play.
+
+## Pages
+
+- [Home](https://www.multiconverter.app/): The currency converter itself — pick currencies, type an amount, see every selected currency convert simultaneously with live mid-market rates and a built-in calculator.
+- [Blog](https://www.multiconverter.app/blog): Guides on currency conversion, exchange rates, mid-market rates, and getting fair value on money transfers.
+- [Privacy Policy](https://www.multiconverter.app/privacy.html): Multi Converter collects no personal data and uses no tracking or analytics cookies.
+
+## Notes
+
+- Live exchange rates are sourced from a public dataset updated once daily; they are mid-market reference rates, not transaction rates.
+- The site is also available at /es, /fr, /de, /pt for the localized homepage, and /es/blog, /fr/blog, /de/blog, /pt/blog for the localized blog.

@@ -1,16 +1,25 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
-import { motion, Reorder, useDragControls, useInView } from 'framer-motion'
+import { Link } from 'react-router-dom'
+import { motion, Reorder, useDragControls } from 'framer-motion'
 import { FlagPicker } from './components/FlagPicker'
+import { RateHistorySection } from './components/RateHistorySection'
+import { RateAlertModal, useAlertChecker } from './components/RateAlert'
 import { useExchangeRates } from './hooks/useExchangeRates'
 import { usePersistentState } from './hooks/usePersistentState'
 import { getCurrencyOrFallback } from './data/currencies'
 import { effectiveDecimals, formatAmount, formatRelativeDate, type DecimalMode } from './lib/formatters'
 import { safeEvaluate } from './lib/calculator'
+import { useT, useUI, useLang } from './i18n/LangContext'
+import { LANGS } from './i18n/translations'
+import { setLangChoice } from './i18n/langPref'
+import { usePageMeta } from './lib/usePageMeta'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const DEFAULT_CODES = ['USD', 'EUR', 'AZN', 'GBP', 'TRY', 'JPY']
 const MAX_SLOTS = 12
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=multiconverter.app'
+const DOWNLOAD_LABEL: Record<string, string> = { en: 'Download', es: 'Descargar', fr: 'Télécharger', de: 'Herunterladen', pt: 'Baixar' }
 const DECIMAL_OPTIONS: DecimalMode[] = ['auto', 0, 2, 4]
 const REVIEW_AVATARS = [
   { initials: 'JD', bg: '#4a9eff' },
@@ -28,7 +37,16 @@ function strip(s: string): string {
   return s.replace(/\.?0+$/, '') || '0'
 }
 
-function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3) }
+// Round float noise (110.00000000000001 → 110) and avoid exponential
+// notation, since the expression evaluator can't parse "1e-7".
+function numToStr(n: number): string {
+  const c = parseFloat(n.toFixed(10))
+  if (c !== 0 && Math.abs(c) < 1e-6) {
+    return c.toFixed(10).replace(/0+$/, '').replace(/\.$/, '')
+  }
+  return c.toString()
+}
+
 
 // ─── FlagImg ─────────────────────────────────────────────────────────────────
 
@@ -59,31 +77,10 @@ function SplitAmount({ text }: { text: string }) {
   )
 }
 
-// ─── CountUp — animated number ───────────────────────────────────────────────
-
-function CountUp({ to, suffix = '', duration = 1.5 }: { to: number; suffix?: string; duration?: number }) {
-  const [val, setVal] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref as React.RefObject<Element>, { once: true })
-
-  useEffect(() => {
-    if (!inView) return
-    let startTime: number | null = null
-    const tick = (ts: number) => {
-      if (startTime === null) startTime = ts
-      const progress = Math.min((ts - startTime) / (duration * 1000), 1)
-      setVal(Math.round(to * easeOutCubic(progress)))
-      if (progress < 1) requestAnimationFrame(tick)
-    }
-    requestAnimationFrame(tick)
-  }, [inView, to, duration])
-
-  return <span ref={ref}>{val}{suffix}</span>
-}
-
 // ─── AnimatedHeadline ────────────────────────────────────────────────────────
 
 function AnimatedHeadline() {
+  const t = useT()
   const container = {
     hidden: {},
     visible: { transition: { staggerChildren: 0.09, delayChildren: 0.2 } },
@@ -92,6 +89,8 @@ function AnimatedHeadline() {
     hidden: { opacity: 0, y: 26 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] as [number, number, number, number] } },
   }
+
+  const gradient = { background: 'linear-gradient(90deg, #ff9500 0%, #ffb84d 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' } as const
 
   return (
     <motion.h1
@@ -109,39 +108,23 @@ function AnimatedHeadline() {
       }}
     >
       <span style={{ display: 'block' }}>
-        {(['The', 'only', 'currency'] as string[]).map((w, i) => (
+        {t.hPre.split(' ').map((w, i) => (
           <motion.span key={i} variants={wordAnim} style={{ display: 'inline-block', marginRight: '0.27em' }}>
-            {w === 'only' ? (
-              <span style={{ position: 'relative', display: 'inline-block' }}>
-                only
-                <motion.svg
-                  viewBox="0 0 110 14"
-                  style={{ position: 'absolute', bottom: -5, left: '-7%', width: '114%', height: 14, overflow: 'visible' }}
-                >
-                  <motion.path
-                    d="M 4 9 Q 28 2 55 8 Q 82 14 106 8"
-                    stroke="#ff9500"
-                    strokeWidth="3"
-                    fill="none"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 1.1, delay: 1.0, ease: 'easeOut' }}
-                  />
-                </motion.svg>
-              </span>
-            ) : w}
+            {w}
           </motion.span>
         ))}
       </span>
       <span style={{ display: 'block' }}>
-        {(['converter', 'you', 'need.'] as string[]).map((w, i) => (
+        {t.hAccent.split(' ').map((w, i) => (
+          <motion.span key={i} variants={wordAnim} style={{ display: 'inline-block', marginRight: '0.27em', paddingBottom: '0.12em', ...gradient }}>
+            {w}
+          </motion.span>
+        ))}
+      </span>
+      <span style={{ display: 'block' }}>
+        {t.hPost.split(' ').map((w, i) => (
           <motion.span key={i} variants={wordAnim} style={{ display: 'inline-block', marginRight: '0.27em' }}>
-            {w === 'converter' ? (
-              <span style={{ background: 'linear-gradient(90deg, #ff9500 0%, #ffb84d 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {w}
-              </span>
-            ) : w}
+            {w}
           </motion.span>
         ))}
       </span>
@@ -160,9 +143,9 @@ function LegalModal({ type, isDark, onClose }: { type: 'privacy' | 'terms'; isDa
 
   const content = type === 'privacy' ? {
     title: 'Privacy Policy',
-    updated: 'Last updated: May 8, 2026',
+    updated: 'Last updated: June 2, 2026',
     sections: [
-      { heading: 'Overview', body: 'Multi Converter ("the App") is operated by Fubboo. We are committed to protecting your privacy. This policy explains what data the App does and does not collect.' },
+      { heading: 'Overview', body: 'Multi Converter ("the App") is operated by fubboo. We are committed to protecting your privacy. This policy explains what data the App does and does not collect.' },
       { heading: 'Data We Do Not Collect', body: 'We do not collect any personal information. The App does not require you to create an account, log in, or provide any personal details. We do not use analytics, tracking pixels, advertising SDKs, or any third-party data collection tools.' },
       { heading: 'Data Stored Locally on Your Device', body: 'The App stores the following data locally on your device using browser localStorage:\n• Your selected currencies and base currency\n• Your decimal precision preference\n• Your theme preference (dark/light)\n• Cached exchange rates (updated daily)\n\nThis data never leaves your device and is not transmitted to us or any third party.' },
       { heading: 'Exchange Rate API', body: 'To fetch live exchange rates, the App connects to a public, free API (cdn.jsdelivr.net / currency-api.pages.dev). This connection may expose your IP address to the CDN provider as part of a normal HTTP request. We have no access to this data.' },
@@ -173,13 +156,13 @@ function LegalModal({ type, isDark, onClose }: { type: 'privacy' | 'terms'; isDa
     ],
   } : {
     title: 'Terms of Use',
-    updated: 'Last updated: May 8, 2026',
+    updated: 'Last updated: June 2, 2026',
     sections: [
       { heading: 'Acceptance', body: 'By using Multi Converter ("the App"), you agree to these Terms. If you do not agree, please stop using the App.' },
-      { heading: 'Use of the App', body: 'The App is provided free of charge for personal, non-commercial use. You may not reverse-engineer, copy, distribute, or create derivative works from the App without explicit permission from Fubboo.' },
+      { heading: 'Use of the App', body: 'The App is provided free of charge for personal, non-commercial use. You may not reverse-engineer, copy, distribute, or create derivative works from the App without explicit permission from fubboo.' },
       { heading: 'Exchange Rates Disclaimer', body: 'Exchange rates displayed in the App are sourced from a free public dataset and are updated approximately once per day. Rates are provided for informational purposes only and should not be used as a basis for financial transactions. Always verify rates with your bank or financial institution before making decisions.' },
       { heading: 'No Financial Advice', body: 'The App is a currency conversion tool only. Nothing in the App constitutes financial, investment, or legal advice.' },
-      { heading: 'Limitation of Liability', body: 'The App is provided "as is" without warranties of any kind. Fubboo shall not be liable for any losses or damages arising from the use of the App or reliance on its exchange rate data.' },
+      { heading: 'Limitation of Liability', body: 'The App is provided "as is" without warranties of any kind. fubboo shall not be liable for any losses or damages arising from the use of the App or reliance on its exchange rate data.' },
       { heading: 'Availability', body: 'We reserve the right to modify, suspend, or discontinue the App at any time without notice.' },
       { heading: 'Contact', body: 'For any questions about these Terms, contact us at: hello@multiconverter.app' },
     ],
@@ -233,6 +216,7 @@ function LegalModal({ type, isDark, onClose }: { type: 'privacy' | 'terms'; isDa
 // ─── SocialProof ─────────────────────────────────────────────────────────────
 
 function SocialProof({ onClick }: { onClick?: () => void }) {
+  const t = useT()
   return (
     <motion.button
       initial={{ opacity: 0, y: 14 }}
@@ -260,15 +244,11 @@ function SocialProof({ onClick }: { onClick?: () => void }) {
         ))}
       </div>
       <div style={{ textAlign: 'left' }}>
-        <div style={{ display: 'flex', gap: 2, marginBottom: 3 }}>
-          {[...Array(5)].map((_, i) => (
-            <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#ff9500">
-              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-            </svg>
-          ))}
-        </div>
-        <p style={{ fontSize: 12.5, color: 'var(--color-text-dim)', whiteSpace: 'nowrap' }}>
-          0+ reviews · Hopefully more soon 🤞
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 1px', whiteSpace: 'nowrap' }}>
+          {t.early1}
+        </p>
+        <p style={{ fontSize: 12.5, color: 'var(--color-text-dim)', whiteSpace: 'nowrap', margin: 0 }}>
+          {t.early2}
         </p>
       </div>
     </motion.button>
@@ -297,6 +277,7 @@ interface RowProps {
 function DraggableRow(props: RowProps) {
   const { code, isBase, amount, computedValue, decimalMode, isDark, canRemove,
     copied, onSelectBase, onEditCurrency, onRemove, onAmountChange, onCopy, onEnter } = props
+  const ui = useUI()
   const controls = useDragControls()
   const [rowHover, setRowHover] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -335,9 +316,10 @@ function DraggableRow(props: RowProps) {
         <button
           onPointerDown={(e) => { e.preventDefault(); controls.start(e) }}
           onClick={(e) => e.stopPropagation()}
+          aria-label={ui.dragToReorder}
           style={{
-            position: 'absolute', left: 7, top: '50%', transform: 'translateY(-50%)',
-            cursor: 'grab', touchAction: 'none', padding: '6px 4px',
+            position: 'absolute', left: 2, top: '50%', transform: 'translateY(-50%)',
+            cursor: 'grab', touchAction: 'none', padding: '12px 9px',
             opacity: rowHover ? 0.5 : 0.12, transition: 'opacity 0.15s',
             color: 'var(--color-text)',
           }}
@@ -374,8 +356,9 @@ function DraggableRow(props: RowProps) {
         {rowHover && canRemove && (
           <button
             onClick={(e) => { e.stopPropagation(); onRemove() }}
+            aria-label={`${ui.removeCurrency} ${code}`}
             style={{
-              width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+              width: 28, height: 28, borderRadius: 7, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
               color: 'var(--color-text-faint)',
@@ -395,6 +378,7 @@ function DraggableRow(props: RowProps) {
               type="text"
               inputMode="decimal"
               maxLength={40}
+              aria-label={ui.amountLabel}
               value={amount}
               onChange={e => {
                 const v = e.target.value
@@ -424,6 +408,7 @@ function DraggableRow(props: RowProps) {
               {/* Copy button — always visible */}
               <button
                 onClick={(e) => { e.stopPropagation(); onCopy(code, displayText) }}
+                aria-label={copied === code ? ui.copied : `${ui.copyAmount} ${code}`}
                 style={{
                   width: 26, height: 26, borderRadius: 7, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -453,9 +438,9 @@ function DraggableRow(props: RowProps) {
 
 // ─── NavBtn ───────────────────────────────────────────────────────────────────
 
-function NavBtn({ children, onClick, disabled, isDark }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; isDark: boolean }) {
+function NavBtn({ children, onClick, disabled, isDark, label }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; isDark: boolean; label: string }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{
+    <button onClick={onClick} disabled={disabled} aria-label={label} style={{
       width: 32, height: 32, borderRadius: '50%',
       backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -463,6 +448,186 @@ function NavBtn({ children, onClick, disabled, isDark }: { children: React.React
     }}>
       {children}
     </button>
+  )
+}
+
+// ─── LangSwitcher ─────────────────────────────────────────────────────────────
+
+function LangSwitcher({ isDark }: { isDark: boolean }) {
+  const { lang } = useLang()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onClick = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [open])
+  const current = LANGS.find(l => l.code === lang) ?? LANGS[0]
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(o => !o)} aria-label="Language" style={{
+        display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 10px', borderRadius: 16,
+        backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)', color: 'var(--color-text-dim)', fontSize: 13, fontWeight: 600,
+      }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+        {current.code.toUpperCase()}
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 100,
+          backgroundColor: isDark ? '#16161e' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+          borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.25)', overflow: 'hidden', minWidth: 150, padding: 5,
+        }}>
+          {LANGS.map(l => (
+            <Link key={l.code} to={l.code === 'en' ? '/' : `/${l.code}`} onClick={() => { setLangChoice(l.code); setOpen(false) }}
+              style={{
+                display: 'block', padding: '8px 12px', borderRadius: 8, fontSize: 13, textDecoration: 'none',
+                color: l.code === lang ? 'var(--color-accent)' : 'var(--color-text)',
+                backgroundColor: l.code === lang ? 'rgba(255,149,0,0.1)' : 'transparent', fontWeight: l.code === lang ? 700 : 500,
+              }}>
+              {l.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── FeaturesSection ─────────────────────────────────────────────────────────
+
+const FEATURES: { title: string; desc: string; path: string }[] = [
+  { title: '100+ currencies', desc: 'Every major and minor world currency, each with its country flag.', path: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2c2.5 2.7 4 6.3 4 10s-1.5 7.3-4 10c-2.5-2.7-4-6.3-4-10s1.5-7.3 4-10z' },
+  { title: 'Live daily rates', desc: 'Mid-market exchange rates refreshed every day from a trusted public source.', path: 'M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15' },
+  { title: 'Convert many at once', desc: 'See all your currencies update together as you type — not just one pair.', path: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z' },
+  { title: 'Built-in calculator', desc: 'Add, subtract, multiply, divide and apply percentages right inside the converter.', path: 'M4 2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h8' },
+  { title: 'Works offline', desc: 'The latest rates are cached on your device, so you can convert without internet.', path: 'M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01' },
+  { title: 'No ads, no tracking', desc: 'No accounts, no analytics, no advertising. Free forever and private by design.', path: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
+]
+
+function FeaturesSection({ isDark }: { isDark: boolean }) {
+  const t = useT()
+  return (
+    <section style={{ maxWidth: 920, margin: '0 auto', width: '100%', padding: '80px 16px 0' }}>
+      <motion.h2
+        initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.5 }}
+        style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-1px', textAlign: 'center', color: 'var(--color-text)', marginBottom: 12 }}
+      >
+        {t.featTitle}
+      </motion.h2>
+      <p style={{ textAlign: 'center', color: 'var(--color-text-dim)', fontSize: 16, maxWidth: 480, margin: '0 auto 44px', lineHeight: 1.6 }}>
+        {t.featSub}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(248px, 1fr))', gap: 16 }}>
+        {FEATURES.map((f, i) => (
+          <motion.div
+            key={f.title}
+            initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.45, delay: (i % 3) * 0.08 }}
+            style={{
+              padding: '22px 22px 24px', borderRadius: 18,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.7)',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}`,
+            }}
+          >
+            <div style={{
+              width: 42, height: 42, borderRadius: 12, marginBottom: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: isDark ? 'rgba(255,149,0,0.12)' : 'rgba(255,149,0,0.1)',
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d={f.path} />
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 16.5, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 7px' }}>{t.features[i].title}</h3>
+            <p style={{ fontSize: 14, color: 'var(--color-text-dim)', lineHeight: 1.6, margin: 0 }}>{t.features[i].desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ─── FaqSection ──────────────────────────────────────────────────────────────
+
+function FaqSection({ isDark }: { isDark: boolean }) {
+  const t = useT()
+  return (
+    <section id="faq" style={{ maxWidth: 720, margin: '0 auto', width: '100%', padding: '80px 16px 0', scrollMarginTop: 70 }}>
+      <motion.h2
+        initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.5 }}
+        style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-1px', textAlign: 'center', color: 'var(--color-text)', marginBottom: 14 }}
+      >
+        {t.faqTitle}
+      </motion.h2>
+      <p style={{ textAlign: 'center', color: 'var(--color-text-dim)', fontSize: 16, maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.6 }}>
+        {t.faqIntro}
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {t.faqs.map((f, i) => (
+          <motion.div
+            key={f.q}
+            initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.4, delay: (i % 4) * 0.05 }}
+            style={{
+              padding: '18px 22px', borderRadius: 16,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.7)',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}`,
+            }}
+          >
+            <h3 style={{ fontSize: 15.5, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px' }}>{f.q}</h3>
+            <p style={{ fontSize: 14.5, color: 'var(--color-text-dim)', lineHeight: 1.65, margin: 0 }}>{f.a}</p>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ─── PopularConversions ──────────────────────────────────────────────────────
+
+const POPULAR_PAIRS: [string, string][] = [
+  ['USD', 'EUR'], ['EUR', 'USD'], ['USD', 'GBP'], ['GBP', 'USD'], ['USD', 'JPY'], ['USD', 'TRY'],
+  ['USD', 'AZN'], ['EUR', 'GBP'], ['USD', 'CAD'], ['USD', 'INR'], ['AUD', 'USD'], ['USD', 'CNY'],
+]
+
+function PopularConversions({ isDark, onPick }: { isDark: boolean; onPick: (base: string, quote: string) => void }) {
+  const t = useT()
+  return (
+    <section style={{ maxWidth: 720, margin: '0 auto', width: '100%', padding: '80px 16px 0' }}>
+      <motion.h2
+        initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.5 }}
+        style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-1px', textAlign: 'center', color: 'var(--color-text)', marginBottom: 12 }}
+      >
+        {t.popTitle}
+      </motion.h2>
+      <p style={{ textAlign: 'center', color: 'var(--color-text-dim)', fontSize: 16, maxWidth: 460, margin: '0 auto 36px', lineHeight: 1.6 }}>
+        {t.popSub}
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+        {POPULAR_PAIRS.map(([base, quote]) => (
+          <button
+            key={`${base}-${quote}`}
+            onClick={() => onPick(base, quote)}
+            style={{
+              fontSize: 14, fontWeight: 600, color: 'var(--color-text-dim)', fontFamily: 'inherit', cursor: 'pointer',
+              padding: '9px 16px', borderRadius: 100,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.08)'}`,
+              transition: 'color 0.15s, border-color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-accent)'; e.currentTarget.style.borderColor = 'rgba(255,149,0,0.4)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-dim)'; e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.08)' }}
+          >
+            {base} → {quote}
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -477,9 +642,29 @@ export default function App() {
   const [picker, setPicker] = useState<PickerMode>({ kind: 'closed' })
   const [copied, setCopied] = useState<string | null>(null)
   const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null)
+  const [alertOpen, setAlertOpen] = useState(false)
+  const [alertPair, setAlertPair] = useState<{ base: string; quote: string }>({ base: 'USD', quote: 'EUR' })
+  useAlertChecker()
+
   const converterRef = useRef<HTMLDivElement>(null)
   const badgesRef = useRef<HTMLDivElement>(null)
   const isDark = theme === 'dark'
+
+  const { lang } = useLang()
+  const t = useT()
+  const ui = useUI()
+  const SITE = 'https://www.multiconverter.app'
+  usePageMeta({
+    title: t.metaTitle,
+    description: t.metaDesc,
+    canonical: SITE + (lang === 'en' ? '/' : `/${lang}`),
+    image: SITE + '/og-image.png',
+    htmlLang: t.htmlLang,
+    alternates: [
+      ...LANGS.map(l => ({ hreflang: l.code, href: SITE + (l.code === 'en' ? '/' : `/${l.code}`) })),
+      { hreflang: 'x-default', href: SITE + '/' },
+    ],
+  })
 
   useEffect(() => {
     document.documentElement.classList.toggle('theme-light', !isDark)
@@ -526,6 +711,13 @@ export default function App() {
     const snapped = parseFloat(raw.toFixed(dec))
     setBaseCode(code)
     setAmount(strip(snapped.toString()))
+  }
+
+  const handlePopularPick = (base: string, quote: string) => {
+    setSelectedCodes(prev => [base, quote, ...prev.filter(c => c !== base && c !== quote)].slice(0, MAX_SLOTS))
+    setBaseCode(base)
+    setAmount('1')
+    requestAnimationFrame(() => converterRef.current?.scrollIntoView({ behavior: 'smooth' }))
   }
 
   const handlePick = (code: string) => {
@@ -580,12 +772,39 @@ export default function App() {
 
   const handleEnter = () => {
     const result = safeEvaluate(amount)
-    if (result !== null) setAmount(strip(result.toString()))
+    if (result !== null) setAmount(strip(numToStr(result)))
+  }
+
+  // iOS calculator semantics: +/− → percent OF the running total; ×/÷ → plain factor.
+  // "200+10%" → 220 · "200−10%" → 180 · "200×10%" → 20 · "200÷10%" → 2000 · "200%" → 2
+  const handlePercent = () => {
+    const lastOpIdx = Math.max(
+      amount.lastIndexOf('+'),
+      amount.lastIndexOf('−'),
+      amount.lastIndexOf('×'),
+      amount.lastIndexOf('÷'),
+    )
+    if (lastOpIdx > 0) {
+      const base = amount.slice(0, lastOpIdx)
+      const op = amount[lastOpIdx]
+      const tailNum = parseFloat(amount.slice(lastOpIdx + 1))
+      const baseVal = safeEvaluate(base)
+      if (baseVal != null && !isNaN(tailNum)) {
+        const pctVal = (op === '+' || op === '−')
+          ? (baseVal * tailNum) / 100
+          : tailNum / 100
+        const result = safeEvaluate(base + op + numToStr(pctVal))
+        if (result != null) return setAmount(strip(numToStr(result)))
+      }
+    }
+    const v = safeEvaluate(amount)
+    if (v === null) return
+    setAmount(strip(numToStr(v / 100)))
   }
 
   const statusDot = error ? '#ff453a' : loading ? '#f0a500' : '#34c759'
-  const statusText = error ? 'Offline' : loading ? 'Updating...' : (formatRelativeDate(date) ?? 'Loading')
   const friendlyDate = formatRelativeDate(date)
+  const statusText = error ? ui.offline : loading ? ui.updating : `${ui.rates} · ${friendlyDate ?? ui.loading}`
 
   const calcBtnStyle = (isDark: boolean): React.CSSProperties => ({
     width: 36, height: 36, borderRadius: 10, fontSize: 16, fontWeight: 600,
@@ -618,44 +837,50 @@ export default function App() {
       {/* ── Fixed Nav ── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 28px', height: 58,
+        display: 'flex', justifyContent: 'center',
+        padding: '0 16px', height: 58,
         backgroundColor: isDark ? 'rgba(7,7,15,0.82)' : 'rgba(240,240,248,0.88)',
         backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)'}`,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <img src="/logo-192.png" alt="Multi Converter" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover' }} />
-          <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.4px', color: 'var(--color-text)' }}>
-            multiconverter
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginRight: 8 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: statusDot, display: 'block', flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: 'var(--color-text-dim)' }}>{statusText}</span>
+        <div style={{
+          width: '100%', maxWidth: 1040,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <img src="/favicon-32.png" alt="Multi Converter" width={30} height={30} style={{ borderRadius: 8, objectFit: 'cover' }} />
+            <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.4px', color: 'var(--color-text)' }}>
+              Multi Converter
+            </span>
           </div>
-          <NavBtn onClick={refresh} disabled={loading} isDark={isDark}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
-            </svg>
-          </NavBtn>
-          <NavBtn onClick={() => setTheme(isDark ? 'light' : 'dark')} isDark={isDark}>
-            {isDark ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginRight: 8 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: statusDot, display: 'block', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--color-text-dim)' }} className="nav-status">{statusText}</span>
+            </div>
+            <LangSwitcher isDark={isDark} />
+            <NavBtn onClick={refresh} disabled={loading} isDark={isDark} label={ui.refreshRates}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
               </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
-          </NavBtn>
+            </NavBtn>
+            <NavBtn onClick={() => setTheme(isDark ? 'light' : 'dark')} isDark={isDark} label={ui.toggleTheme}>
+              {isDark ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              )}
+            </NavBtn>
+          </div>
         </div>
       </nav>
 
-      <div style={{ position: 'relative', zIndex: 1, paddingTop: 58 }}>
+      <main style={{ position: 'relative', zIndex: 1, paddingTop: 58 }}>
 
         {/* ── Hero Section ── */}
         <section className="snap-start" style={{
@@ -679,7 +904,7 @@ export default function App() {
               border: '1px solid rgba(255,149,0,0.3)',
             }}
           >
-            Free · No signup · 150+ currencies
+            {t.badge}
           </motion.div>
 
           <AnimatedHeadline />
@@ -688,9 +913,10 @@ export default function App() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            style={{ fontSize: 19, color: 'var(--color-text-dim)', marginBottom: 36, maxWidth: 440, lineHeight: 1.65 }}
+            style={{ fontSize: 19, color: 'var(--color-text-dim)', marginBottom: 36, maxWidth: 540, lineHeight: 1.7 }}
           >
-            Convert between multiple currencies at once — see all your rates update instantly as you type.<br />Live exchange rates updated daily. Works offline. Always free.
+            {t.subtitle}{' '}
+            <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>{t.alwaysFree}</span>
           </motion.p>
 
           <SocialProof onClick={() => badgesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
@@ -707,31 +933,58 @@ export default function App() {
               {
                 icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--color-text)"><path d="M3 20.5v-17c0-.83 1-.99 1.4-.5l15 8.5-15 8.5c-.4.49-1.4.33-1.4-.5z" /></svg>,
                 label: 'Google Play',
+                href: PLAY_URL as string | undefined,
+                top: DOWNLOAD_LABEL[lang] ?? 'Download',
               },
               {
                 icon: <svg width="16" height="18" viewBox="0 0 24 24" fill="var(--color-text)"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>,
                 label: 'App Store',
+                href: undefined as string | undefined,
+                top: t.comingSoon,
               },
-            ].map(({ icon, label }) => (
-              <div key={label} style={{
+            ].map(({ icon, label, href, top }) => {
+              const inner = (
+                <>
+                  {icon}
+                  <div>
+                    <div style={{ fontSize: 10, color: 'var(--color-text-dim)', lineHeight: 1, marginBottom: 2 }}>{top}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', lineHeight: 1 }}>{label}</div>
+                  </div>
+                </>
+              )
+              const style: React.CSSProperties = {
                 display: 'flex', alignItems: 'center', gap: 10,
-                padding: '11px 22px', borderRadius: 13,
+                padding: '11px 22px', borderRadius: 13, textDecoration: 'none',
                 backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                 border: `1px solid ${isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.08)'}`,
-                opacity: 0.72,
-              }}>
-                {icon}
-                <div>
-                  <div style={{ fontSize: 10, color: 'var(--color-text-dim)', lineHeight: 1, marginBottom: 2 }}>Coming soon</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', lineHeight: 1 }}>{label}</div>
-                </div>
-              </div>
-            ))}
+                opacity: href ? 1 : 0.72,
+              }
+              return href
+                ? <a key={label} href={href} target="_blank" rel="noopener noreferrer" style={style}>{inner}</a>
+                : <div key={label} style={style}>{inner}</div>
+            })}
           </motion.div>
+
+          {/* Notify-at-launch CTA (honest, no backend / no tracking) */}
+          <motion.a
+            href="mailto:hello@multiconverter.app?subject=Notify%20me%20when%20Multi%20Converter%20launches"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.05, duration: 0.5 }}
+            style={{ marginTop: 18, fontSize: 13, color: 'var(--color-text-dim)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-accent)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-dim)')}
+          >
+            {t.getNotified}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+            </svg>
+          </motion.a>
 
           {/* Scroll down arrow */}
           <motion.button
             onClick={() => converterRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            aria-label={ui.scrollDown}
             animate={{ y: [0, 6, 0] }}
             transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
             style={{
@@ -750,7 +1003,7 @@ export default function App() {
         </section>
 
         {/* ── Converter Section ── */}
-        <div ref={converterRef} className="snap-start" style={{ minHeight: '100vh', padding: '88px 24px 0', display: 'flex', flexDirection: 'column' }}>
+        <div ref={converterRef} id="converter" className="snap-start" style={{ minHeight: '100vh', padding: 'clamp(48px, 8vh, 88px) 16px 0', display: 'flex', flexDirection: 'column' }}>
 
           {/* Converter card */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -770,7 +1023,7 @@ export default function App() {
                 display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
               }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase', marginRight: 'auto' }}>
-                  Currency converter
+                  {t.cardTitle}
                 </span>
                 {/* Decimal mode */}
                 <div style={{ display: 'flex', gap: 3 }}>
@@ -795,7 +1048,7 @@ export default function App() {
                     opacity: selectedCodes.length >= MAX_SLOTS ? 0.4 : 1,
                   }}
                 >
-                  <span style={{ fontSize: 15, lineHeight: 1 }}>+</span> Add
+                  <span style={{ fontSize: 15, lineHeight: 1 }}>+</span> {t.add}
                 </button>
               </div>
 
@@ -805,12 +1058,15 @@ export default function App() {
                 padding: '10px 20px',
                 borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
               }}>
-                <span style={{ fontSize: 11, color: 'var(--color-text-faint)', marginRight: 4, whiteSpace: 'nowrap' }}>Calculate:</span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-faint)', marginRight: 4, whiteSpace: 'nowrap' }}>{t.calculate}</span>
                 {OPERATORS.map(op => (
                   <button key={op} onClick={() => appendOp(op)} style={calcBtnStyle(isDark)}>
                     {op}
                   </button>
                 ))}
+                <button onClick={handlePercent} style={{ ...calcBtnStyle(isDark), color: 'var(--color-text-dim)' }} title="Percent">
+                  %
+                </button>
                 <button
                   onClick={() => setAmount(prev => prev.length > 1 ? prev.slice(0, -1) : '0')}
                   style={{ ...calcBtnStyle(isDark), color: 'var(--color-text-dim)' }}
@@ -863,7 +1119,7 @@ export default function App() {
                 borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
-                <span style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>Mid-market rates · For reference only</span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>{t.midMarket}</span>
                 <span style={{ fontSize: 11, color: 'var(--color-text-dim)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: statusDot, display: 'inline-block' }} />
                   {friendlyDate ?? 'Loading'}
@@ -872,21 +1128,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* Stats row */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 88, marginTop: 100, flexWrap: 'wrap' }}>
-            {[
-              { to: 150, suffix: '+', label: 'Currencies' },
-              { to: 100, suffix: '%', label: 'Free forever' },
-              { to: 24, suffix: 'h', label: 'Update cycle' },
-            ].map(({ to, suffix, label }) => (
-              <div key={label} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--color-text)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                  <CountUp to={to} suffix={suffix} />
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--color-text-dim)', marginTop: 6 }}>{label}</div>
-              </div>
-            ))}
-          </div>
+          {/* Rate History Section */}
+          <RateHistorySection isDark={isDark} onOpenAlert={(b, q) => { setAlertPair({ base: b, quote: q }); setAlertOpen(true) }} />
+
+          {/* Features + Popular conversions + FAQ (value + SEO content) */}
+          <FeaturesSection isDark={isDark} />
+          <PopularConversions isDark={isDark} onPick={handlePopularPick} />
+          <FaqSection isDark={isDark} />
 
           {/* Push footer to bottom */}
           <div style={{ flex: 1 }} />
@@ -922,10 +1170,17 @@ export default function App() {
             </div>
             {/* Links */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 16, flexWrap: 'wrap' }}>
+              <Link to={lang === 'en' ? '/blog' : `/${lang}/blog`}
+                style={{ fontSize: 12, color: 'var(--color-text-dim)', textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-accent)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-dim)')}
+              >
+                {t.blog}
+              </Link>
               {([
-                { label: 'Privacy Policy', action: () => setLegalModal('privacy') },
-                { label: 'Terms of Use', action: () => setLegalModal('terms') },
-                { label: 'Contact', action: () => window.location.href = 'mailto:hello@multiconverter.app' },
+                { label: t.privacy, action: () => setLegalModal('privacy') },
+                { label: t.terms, action: () => setLegalModal('terms') },
+                { label: t.contact, action: () => window.location.href = 'mailto:hello@multiconverter.app' },
               ] as { label: string; action: () => void }[]).map(({ label, action }) => (
                 <button key={label} onClick={action}
                   style={{ fontSize: 12, color: 'var(--color-text-dim)', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.15s', fontFamily: 'inherit' }}
@@ -937,21 +1192,17 @@ export default function App() {
               ))}
             </div>
             <p style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>
-              © 2026 multiconverter.app by Fubboo · Rates:{' '}
-              <a href="https://github.com/fawazahmed0/exchange-api" target="_blank" rel="noopener noreferrer"
-                style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
-                fawazahmed0/currency-api
-              </a>
+              © 2026 multiconverter.app · by fubboo
             </p>
           </div>
         </div>
-      </div>
+      </main>
 
       {picker.kind !== 'closed' && (
         <FlagPicker
           excludeCodes={picker.kind === 'edit' ? selectedCodes.filter((_, i) => i !== picker.slotIndex) : selectedCodes}
           highlightCode={picker.kind === 'edit' ? selectedCodes[picker.slotIndex] : undefined}
-          title={picker.kind === 'add' ? 'Add currency' : 'Change currency'}
+          title={picker.kind === 'add' ? ui.addCurrency : ui.changeCurrency}
           onPick={handlePick}
           onClose={() => setPicker({ kind: 'closed' })}
           isDark={isDark}
@@ -960,6 +1211,10 @@ export default function App() {
 
       {legalModal && (
         <LegalModal type={legalModal} isDark={isDark} onClose={() => setLegalModal(null)} />
+      )}
+
+      {alertOpen && (
+        <RateAlertModal defaultBase={alertPair.base} defaultQuote={alertPair.quote} isDark={isDark} onClose={() => setAlertOpen(false)} />
       )}
     </div>
   )
